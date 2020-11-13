@@ -78,9 +78,9 @@ func (e *Team) UpdateDt(s string) {
 	e.dt = s
 }
 
-// UpdatePlayer actualiza el DT de un Team
-func (e *Team) UpdatePlayer(s string) {
-	e.dt = s
+// UpdatePlayer actualiza un player del Team
+func (e *Team) UpdatePlayer(s string, n int) {
+	e.players[n] = s
 }
 
 // Print printea lo que quiero printear
