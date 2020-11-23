@@ -30,6 +30,13 @@ func NewHTTPTransport(s Service) HTTPService {
 func makeEndpoints(s Service) []*endpoint {
 	list := []*endpoint{}
 
+	// añadir un team
+	list = append(list, &endpoint{
+		method:   "POST",
+		path:     "/team",
+		function: add(s),
+	})
+
 	// obtener todos los teams
 	list = append(list, &endpoint{
 		method:   "GET",
@@ -49,13 +56,6 @@ func makeEndpoints(s Service) []*endpoint {
 		method:   "DELETE",
 		path:     "/team/:ID",
 		function: delete(s),
-	})
-
-	// añadir un team
-	list = append(list, &endpoint{
-		method:   "POST",
-		path:     "/team/:name",
-		function: add(s),
 	})
 
 	// editar un team
@@ -96,9 +96,9 @@ func delete(s Service) gin.HandlerFunc {
 
 func add(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		n := c.Param("name")
+		n := c.Query("name")
 		c.JSON(http.StatusOK, gin.H{
-			"team": s.AddTeam(NewTeam(n, 0)),
+			"team": s.AddTeam(n),
 		})
 	}
 }

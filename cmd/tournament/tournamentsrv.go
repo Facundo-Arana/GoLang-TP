@@ -50,18 +50,18 @@ func createSchema(db *sqlx.DB) error {
 	// aca se guardan nombres de team y su ID
 	schema1 := `CREATE TABLE IF NOT EXISTS tournament (
 		id integer primary key autoincrement,
-		name text);`
+		name varchar(56) NOT NULL UNIQUE);`
 
 	/*
 		INTENTE HACER DOS TABLAS Y QUE SE RELACIONEN
 
-		POR HOY LO MENOS HOY NO LO LOGRE
+		POR LO MENOS HOY NO LO LOGRE
 
 		schema2 := `CREATE TABLE IF NOT EXISTS player (
 			id integer primary key autoincrement,
-			name  varchar(56),
-			num   integer,
-			attributeFK FOREIGN KEY (attributeFK) REFERENCES tournament(name));`
+			name  varchar(56) NOT NULL,
+			num   integer NOT NULL UNIQUE,
+			teamFK varchar(56) FOREIGN KEY REFERENCES tournament(name));`
 
 	*/
 	_, err := db.Exec(schema1 /*schema2*/)

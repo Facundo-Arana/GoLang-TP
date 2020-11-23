@@ -1,7 +1,7 @@
 package tournament
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Facundo-Arana/GoLang-TP/internal/config"
@@ -14,6 +14,15 @@ type Team struct {
 	Name string
 }
 
+// Player ...
+type Player struct {
+	ID   int64
+	Name string
+	Num  string
+	IDFk int64
+}
+
+/*
 // NewTeam ...
 func NewTeam(s string, i int64) Team {
 	return Team{
@@ -21,15 +30,6 @@ func NewTeam(s string, i int64) Team {
 		s,
 	}
 }
-
-/*
-	// Player ...
-	type Player struct {
-		ID     int64
-		Name   string
-		Num    string
-		AttrFK string
-	}
 	// NewPlayer ...
 	func NewPlayer(s string, i int64, n string, attr string) Player {
 		return Player{
@@ -43,11 +43,11 @@ func NewTeam(s string, i int64) Team {
 
 // Service interface
 type Service interface {
+	AddTeam(string) string
 	GetAllTeams() []*Team
-	GetTeam(string) []*Team
-	AddTeam(Team) sql.Result
-	DeleteTeam(string) sql.Result
-	EditTeam(string, string) sql.Result
+	GetTeam(string) *Team
+	DeleteTeam(string) string
+	EditTeam(string, string) string
 }
 
 type service struct {
@@ -72,32 +72,54 @@ func (s service) GetAllTeams() []*Team {
 }
 
 // Get ...
-func (s service) GetTeam(i string) []*Team {
-	var t []*Team
+func (s service) GetTeam(i string) *Team {
 	query := `SELECT * FROM tournament WHERE id = (?)`
-	err := s.db.Select(&t, query, i)
+
+	var t Team
+	err := s.db.Get(&t, query, i)
 	if err != nil {
-		fmt.Println(err.Error())
+		panic(err.Error())
 	}
-	return t
+	return &t
 }
 
 // Add ...
-func (s service) AddTeam(t Team) sql.Result {
+func (s service) AddTeam(t string) string {
 	query := `INSERT INTO tournament (name) VALUES (?)`
-	return s.db.MustExec(query, t.Name)
+
+	res, err := s.db.Exec(query, t)
+	if err != nil {
+		return fmt.Sprintf("%v", errors.New("DATABASE ERROR - "+err.Error()))
+	}
+	LastID, _ := res.LastInsertId()
+
+	return fmt.Sprintf("New team ID: %d", LastID)
 }
 
 // DeleteTeam ...
-func (s service) DeleteTeam(i string) sql.Result {
+func (s service) DeleteTeam(i string) string {
 	query := `DELETE FROM tournament WHERE id = (?)`
-	return s.db.MustExec(query, i)
+	res, err := s.db.Exec(query, i)
+
+	if err != nil {
+		return fmt.Sprintf("%v", errors.New("DATABASE ERROR - "+err.Error()))
+	}
+	RowsAffected, _ := res.RowsAffected()
+
+	return fmt.Sprintf("Columns affected: %d", RowsAffected)
 }
 
 // EditTeam ...
-func (s service) EditTeam(n string, i string) sql.Result {
+func (s service) EditTeam(n string, i string) string {
 	query := `UPDATE tournament SET name = ? WHERE id = ?`
-	return s.db.MustExec(query, n, i)
+	res, err := s.db.Exec(query, n, i)
+
+	if err != nil {
+		return fmt.Sprintf("%v", errors.New("DATABASE ERROR - "+err.Error()))
+	}
+	RowsAffected, _ := res.RowsAffected()
+
+	return fmt.Sprintf("Columns affected: %d", RowsAffected)
 }
 
 /*
