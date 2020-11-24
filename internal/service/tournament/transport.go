@@ -65,7 +65,57 @@ func makeEndpoints(s Service) []*endpoint {
 		function: edit(s),
 	})
 
+	// añadir un player a team
+	list = append(list, &endpoint{
+		method:   "POST",
+		path:     "/team/:ID/player",
+		function: addPlayer(s),
+	})
+
+	// obtener los players de team
+	list = append(list, &endpoint{
+		method:   "GET",
+		path:     "/team/:ID/player",
+		function: getPlayersByTeam(s),
+	})
+
+	// obtener todos los players
+	list = append(list, &endpoint{
+		method:   "GET",
+		path:     "/player",
+		function: getAllPlayers(s),
+	})
+
 	return list
+}
+
+func getAllPlayers(s Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"players": s.GetAllPlayers(),
+		})
+	}
+}
+
+func getPlayersByTeam(s Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		team := c.Param("ID")
+		c.JSON(http.StatusOK, gin.H{
+			"players": s.GetPlayersByTeam(team),
+		})
+	}
+}
+
+func addPlayer(s Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		teamName := c.Param("ID")
+		playerName := c.Query("name")
+		num := c.Query("numero")
+
+		c.JSON(http.StatusOK, gin.H{
+			"player": s.AddPlayer(playerName, num, teamName),
+		})
+	}
 }
 
 func getAll(s Service) gin.HandlerFunc {
@@ -112,28 +162,6 @@ func edit(s Service) gin.HandlerFunc {
 		})
 	}
 }
-
-/*
-func addPlayer(s Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		n := c.Param("name")
-		p := c.Param("playerName")
-		num := c.Param("numeroCamiseta")
-		c.JSON(http.StatusOK, gin.H{
-			"players": s.AddPlayer(NewPlayer(p, 0, num, n)),
-		})
-	}
-}
-
-func getAllPlayers(s Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		n := c.Param("ID")
-		c.JSON(http.StatusOK, gin.H{
-			"players": s.GetAllPlayers(n),
-		})
-	}
-}
-*/
 
 // Register ...
 func (s httpService) Register(r *gin.Engine) {

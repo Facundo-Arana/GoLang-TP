@@ -8,6 +8,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// Service interface
+type Service interface {
+	AddTeam(string) string
+	GetAllTeams() []*Team
+	GetTeam(string) *Team
+	DeleteTeam(string) string
+	EditTeam(string, string) string
+
+	AddPlayer(string, string, string) string
+	GetPlayersByTeam(string) []*Player
+	GetAllPlayers() []*Player
+}
+
 // Team ...
 type Team struct {
 	ID   int64
@@ -18,36 +31,8 @@ type Team struct {
 type Player struct {
 	ID   int64
 	Name string
-	Num  string
-	IDFk int64
-}
-
-/*
-// NewTeam ...
-func NewTeam(s string, i int64) Team {
-	return Team{
-		i,
-		s,
-	}
-}
-	// NewPlayer ...
-	func NewPlayer(s string, i int64, n string, attr string) Player {
-		return Player{
-			i,
-			s,
-			n,
-			attr,
-		}
-	}
-*/
-
-// Service interface
-type Service interface {
-	AddTeam(string) string
-	GetAllTeams() []*Team
-	GetTeam(string) *Team
-	DeleteTeam(string) string
-	EditTeam(string, string) string
+	Num  int64
+	Team string
 }
 
 type service struct {
@@ -60,20 +45,55 @@ func New(db *sqlx.DB, c *config.Config) (Service, error) {
 	return service{db, c}, nil
 }
 
+func (s service) GetAllPlayers() []*Player {
+	query := `SELECT * FROM players`
+	var list []*Player
+
+	err := s.db.Select(&list, query)
+	if err != nil {
+		panic(err.Error())
+	}
+	return list
+}
+
+func (s service) GetPlayersByTeam(n string) []*Player {
+
+	var list []*Player
+	/*
+		query := `SELECT players.* FROM players JOIN teams ON player.teamFk = tournament.name WHERE tournament.name = (?)`
+			err := s.db.Select(&list, query, n)
+			if err != nil {
+				panic(err.Error())
+			}
+	*/
+	return list
+}
+
+// AddPlayer ...
+func (s service) AddPlayer(n string, num string, t string) string {
+	query := `INSERT INTO players (name, num, team) VALUES (?, ?, ?)`
+
+	res := s.db.MustExec(query, n, num, t)
+	LastID, _ := res.LastInsertId()
+
+	return fmt.Sprintf("New Player ID: %d", LastID)
+}
+
 // GetAllTeams ...
 func (s service) GetAllTeams() []*Team {
 	var list []*Team
-	query := "SELECT * FROM tournament"
+
+	query := "SELECT * FROM teams"
 	err := s.db.Select(&list, query)
 	if err != nil {
-		fmt.Println(err.Error())
+		panic(err.Error())
 	}
 	return list
 }
 
 // Get ...
 func (s service) GetTeam(i string) *Team {
-	query := `SELECT * FROM tournament WHERE id = (?)`
+	query := `SELECT * FROM teams WHERE id = (?)`
 
 	var t Team
 	err := s.db.Get(&t, query, i)
@@ -85,7 +105,7 @@ func (s service) GetTeam(i string) *Team {
 
 // Add ...
 func (s service) AddTeam(t string) string {
-	query := `INSERT INTO tournament (name) VALUES (?)`
+	query := `INSERT INTO teams (name) VALUES (?)`
 
 	res, err := s.db.Exec(query, t)
 	if err != nil {
@@ -98,7 +118,7 @@ func (s service) AddTeam(t string) string {
 
 // DeleteTeam ...
 func (s service) DeleteTeam(i string) string {
-	query := `DELETE FROM tournament WHERE id = (?)`
+	query := `DELETE FROM teams WHERE id = (?)`
 	res, err := s.db.Exec(query, i)
 
 	if err != nil {
@@ -111,7 +131,7 @@ func (s service) DeleteTeam(i string) string {
 
 // EditTeam ...
 func (s service) EditTeam(n string, i string) string {
-	query := `UPDATE tournament SET name = ? WHERE id = ?`
+	query := `UPDATE teams SET name = ? WHERE id = ?`
 	res, err := s.db.Exec(query, n, i)
 
 	if err != nil {
@@ -121,23 +141,3 @@ func (s service) EditTeam(n string, i string) string {
 
 	return fmt.Sprintf("Columns affected: %d", RowsAffected)
 }
-
-/*
-// AddPlayer ...
-func (s service) AddPlayer(p Player) error {
-	query := `INSERT INTO player (name, num, attributeFK) VALUES (?, ?, ?)`
-	s.db.MustExec(query, p.Name, p.Num, p.AttrFK)
-	return nil
-}
-
-// GetAllPlayers ...
-func (s service) GetAllPlayers(n string) []*Player {
-	var list []*Player
-	query := "SELECT * FROM player "
-	err := s.db.Select(&list, query, n)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	return list
-}
-*/
