@@ -1,6 +1,9 @@
 package tournament
 
 /*
+
+	TE DEBO EL TESTING
+
 func TestTournamentAdd(t *testing.T) {
 	c := NewTournament()
 	e0 := c.GetTeam(0)

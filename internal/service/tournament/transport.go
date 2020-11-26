@@ -2,6 +2,7 @@ package tournament
 
 import (
 	"net/http"
+	"strconv" // lo comento pa que no se queje
 
 	"github.com/gin-gonic/gin" // comentar porque sino se pone todo amarillo
 )
@@ -79,7 +80,7 @@ func makeEndpoints(s Service) []*endpoint {
 		function: getPlayersByTeam(s),
 	})
 
-	// obtener todos los players
+	// obtener todos los players.... endpoint solo para desarrollo
 	list = append(list, &endpoint{
 		method:   "GET",
 		path:     "/player",
@@ -91,74 +92,125 @@ func makeEndpoints(s Service) []*endpoint {
 
 func getAllPlayers(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		players, err := s.GetAllPlayers()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"players": s.GetAllPlayers(),
+			"players": players,
 		})
 	}
 }
 
 func getPlayersByTeam(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		team := c.Param("ID")
+		i, _ := strconv.ParseInt(c.Param("ID"), 10, 64)
+
+		players, err := s.GetPlayersByTeam(i)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"players": s.GetPlayersByTeam(team),
+			"players": players,
 		})
 	}
 }
 
 func addPlayer(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		teamName := c.Param("ID")
+		i, _ := strconv.ParseInt(c.Param("ID"), 10, 64)
 		playerName := c.Query("name")
-		num := c.Query("numero")
+		num, _ := strconv.ParseInt(c.Query("numero"), 10, 64)
+
+		player, err := s.AddPlayer(NewPlayer(playerName, num, i))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"player": s.AddPlayer(playerName, num, teamName),
+			"player": player,
 		})
 	}
 }
 
 func getAll(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		teams, err := s.GetAllTeams()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"teams": s.GetAllTeams(),
+			"teams": teams,
 		})
 	}
 }
 
 func get(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		i := c.Param("ID")
+		id, _ := strconv.ParseInt(c.Param("ID"), 10, 64)
+		t, err := s.GetTeam(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"team": s.GetTeam(i),
+			"team": t,
 		})
 	}
 }
 
 func delete(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		i := c.Param("ID")
+		i, _ := strconv.ParseInt(c.Param("ID"), 10, 64)
+
+		err := s.DeleteTeam(i)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"team": s.DeleteTeam(i),
+			"status": "OK",
 		})
 	}
 }
 
 func add(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		n := c.Query("name")
+		t := NewTeam(c.Query("name"))
+		t, err := s.AddTeam(t)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"team": s.AddTeam(n),
+			"team": t,
 		})
 	}
 }
 
 func edit(s Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		i := c.Param("ID")
+		i, _ := strconv.ParseInt(c.Param("ID"), 10, 64)
 		n := c.Query("newName")
+
+		err := s.EditTeam(n, i)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{":( ": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"team": s.EditTeam(n, i),
+			"status": "OK",
 		})
 	}
 }

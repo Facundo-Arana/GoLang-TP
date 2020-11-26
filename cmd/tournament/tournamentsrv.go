@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	//    go run cmd/tournament/tournamentsrv.go -config ./config/config.yaml
 
 	configFile := flag.String("config", "./config.yaml", "this is the service config")
 	flag.Parse()
@@ -32,12 +33,6 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	/*
-	 */
-	service.AddTeam("BOKITA")
-
-	s := service.AddPlayer("andrada", "1", "BOKITA")
-	fmt.Println(s)
 
 	httpService := tournament.NewHTTPTransport(service)
 
@@ -58,9 +53,8 @@ func createSchema(db *sqlx.DB) error {
 		id integer primary key autoincrement,
 		name  varchar(56),
 		num   integer,
-		team varchar(56));`)
-
-	//FOREIGN KEY (team) REFERENCES teams(name));`
+		idteamFK integer NOT NULL );`)
+	//  FOREIGN KEY (idteamFK) REFERENCES teams(id) ON DELETE CASCADE);`
 
 	_, err := db.Exec(schema1)
 	if err != nil {
